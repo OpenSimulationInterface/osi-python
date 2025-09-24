@@ -50,6 +50,42 @@ class OSITrace:
         """Message types that OSITrace supports."""
         return list(MESSAGES_TYPE.keys())
     
+    _legacy_ositrace_attributes = {
+        "type",
+        "file",
+        "current_index",
+        "message_offsets",
+        "read_complete",
+        "message_cache",
+    }
+
+    def __getattr__(self, name):
+        """
+        This method forwards the getattr call for unsuccessful legacy attribute
+        name lookups to the reader in case it is an OSITraceSingle instance.
+        """
+        if name in self._legacy_ositrace_attributes and isinstance(self.reader, OSITraceSingle):
+            return getattr(self.reader, name)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+    
+    def __setattr__(self, name, value):
+        """
+        This method overwrites the default setter and forwards setattr calls for
+        legacy attribute names to the reader in case the reader is an
+        OSITraceSingle instance. Otherwise it uses the default setter.
+        """
+        reader = super().__getattribute__("reader") if "reader" in self.__dict__ else None
+        if name in self._legacy_ositrace_attributes and isinstance(reader, OSITraceSingle):
+            setattr(reader, name, value)
+        else:
+            super().__setattr__(name, value)
+
+    def __dir__(self):
+        attrs = super().__dir__()
+        if isinstance(self.reader, OSITraceSingle):
+            attrs += list(self._legacy_ositrace_attributes)
+        return attrs
+    
     def __init__(self, path=None, type_name="SensorView", cache_messages=False, topic=None):
         """
         Initializes the trace reader depending on the trace file format.
