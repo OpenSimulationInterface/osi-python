@@ -61,7 +61,6 @@ class OSITrace:
             topic (str): The topic name for multi-channel traces (only applies to multi-channel traces); Using the first available topic if not specified.
         """
         self.reader = None
-        self.path = None
 
         if path is not None:
             self.reader = self._init_reader(Path(path), type_name, cache_messages, topic)
@@ -145,6 +144,7 @@ class OSITrace:
 
 class ReaderBase(ABC):
     """Common interface for trace readers"""
+    
     @abstractmethod
     def restart(self, index=None):
         pass
@@ -309,11 +309,10 @@ class OSITraceMulti(ReaderBase):
     """OSI multi-channel trace reader"""
 
     def __init__(self, path, topic):
-        self.path = Path(path)
-        self._file = open(self.path, "rb")
-        self.mcap_reader = make_reader(self._file, decoder_factories=[DecoderFactory()])
+        self._file = open(path, "rb")
+        self._mcap_reader = make_reader(self._file, decoder_factories=[DecoderFactory()])
         self._iter = None
-        self._summary = self.mcap_reader.get_summary()
+        self._summary = self._mcap_reader.get_summary()
         available_topics = self.get_available_topics()
         if topic == None:
             topic = available_topics[0]
@@ -329,7 +328,7 @@ class OSITraceMulti(ReaderBase):
     def __iter__(self):
         """Stateful iterator over the channel's messages in log time order."""
         if self._iter is None:
-            self._iter = self.mcap_reader.iter_decoded_messages(topics=[self.topic])
+            self._iter = self._mcap_reader.iter_decoded_messages(topics=[self.topic])
         for message in self._iter:
             yield message.decoded_message
     
@@ -337,7 +336,7 @@ class OSITraceMulti(ReaderBase):
         if self._file:
             self._file.close()
         self._file = None
-        self.mcap_reader = None
+        self._mcap_reader = None
         self._summary = None
         self._iter = None
 
@@ -346,7 +345,7 @@ class OSITraceMulti(ReaderBase):
 
     def get_file_metadata(self):
         metadata = []
-        for metadata_entry in self.mcap_reader.iter_metadata():
+        for metadata_entry in self._mcap_reader.iter_metadata():
             metadata.append(metadata_entry)
         return metadata
 
