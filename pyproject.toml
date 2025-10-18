@@ -28,6 +28,9 @@ packages = [
     { include = "osi3" },
     { include = "osi3trace" },
 ]
+include = [
+    { path = "osi3/*.py*", format = ["sdist", "wheel"] }
+]
 exclude = [ "osi3/*.proto" ]
 version = "0.0.0"
 
