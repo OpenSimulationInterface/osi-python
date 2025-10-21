@@ -106,12 +106,9 @@ class OSITrace:
             raise FileNotFoundError("File not found")
 
         if path.suffix.lower() == ".mcap":
-            reader = OSITraceMulti(path, topic)
-            if reader.get_message_type() != type_name:
-                raise ValueError(f"Channel message type '{reader.get_message_type()}' does not match expected type '{type_name}'")
-            return reader
+            return OSITraceMulti(path, type_name, topic)
         elif path.suffix.lower() in [".osi", ".lzma", ".xz"]:
-            return OSITraceSingle(str(path), type_name, cache_messages)
+            return OSITraceSingle(path, type_name, cache_messages)
         else:
             raise ValueError(f"Unsupported file format: '{path.suffix}'")
 
@@ -212,7 +209,7 @@ class OSITraceSingle(ReaderBase):
         """Import a trace from a file"""
         self.type = OSITrace.map_message_type(type_name)
 
-        if path.lower().endswith((".lzma", ".xz")):
+        if path.suffix.lower() in [".lzma", ".xz"]:
             self.file = lzma.open(path, "rb")
         else:
             self.file = open(path, "rb")
@@ -344,16 +341,16 @@ class OSITraceSingle(ReaderBase):
 class OSITraceMulti(ReaderBase):
     """OSI multi-channel trace reader"""
 
-    def __init__(self, path, topic):
+    def __init__(self, path, type_name, topic):
         self._file = open(path, "rb")
         self._mcap_reader = make_reader(self._file, decoder_factories=[DecoderFactory()])
         self._iter = None
         self._summary = self._mcap_reader.get_summary()
-        available_topics = self.get_available_topics()
+        available_topics = self.get_available_topics(type_name)
         if topic == None:
-            topic = available_topics[0]
+            topic = next(iter(available_topics), None)
         if topic not in available_topics:
-            raise ValueError(f"The requested topic '{topic}' is not present in the trace file.")
+            raise ValueError(f"The requested topic '{topic}' is not present in the trace file or is not of type '{type_name}'.")
         self.topic = topic
     
     def restart(self, index=None):
@@ -376,8 +373,8 @@ class OSITraceMulti(ReaderBase):
         self._summary = None
         self._iter = None
 
-    def get_available_topics(self):
-        return [channel.topic for id, channel in self._summary.channels.items()]
+    def get_available_topics(self, type_name = None):
+        return [channel.topic for channel in self._summary.channels.values() if self._channel_is_of_type(channel, type_name)]
 
     def get_file_metadata(self):
         metadata = []
@@ -392,7 +389,7 @@ class OSITraceMulti(ReaderBase):
         return None
     
     def get_message_type(self):
-        for channel_id, channel in self._summary.channels.items():
+        for channel in self._summary.channels.values():
             if channel.topic == self.topic:
                 schema = self._summary.schemas[channel.schema_id]
                 if schema.name.startswith("osi3."):
@@ -400,3 +397,7 @@ class OSITraceMulti(ReaderBase):
                 else:
                     raise ValueError(f"Schema '{schema.name}' is not an 'osi3.' schema.")
         return None
+    
+    def _channel_is_of_type(self, channel, type_name):
+        schema = self._summary.schemas[channel.schema_id]  
+        return type_name is None or schema.name == f"osi3.{type_name}"
