@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import warnings
 
 from osi3trace.osi_trace import OSITrace
 from osi3.osi_sensorview_pb2 import SensorView
@@ -30,7 +31,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, SensorView)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -47,7 +50,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, SensorViewConfiguration)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 1)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 1)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -64,7 +69,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, GroundTruth)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -81,7 +88,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, HostVehicleData)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -98,7 +107,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, SensorData)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -115,7 +126,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, TrafficCommand)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -132,7 +145,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, TrafficCommandUpdate)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -149,7 +164,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, TrafficUpdate)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -166,7 +183,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, MotionRequest)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -183,7 +202,9 @@ class TestOSITrace(unittest.TestCase):
                     self.assertIsInstance(message, StreamingUpdate)
                     f.write(str(message))
 
-            self.assertEqual(len(trace.retrieve_offsets()), 10)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -195,8 +216,10 @@ class TestOSITrace(unittest.TestCase):
 
             trace = OSITrace(path_input)
             # Test whether the function can handle be run multiple times safely
-            offsets = trace.retrieve_offsets(None)
-            offsets2 = trace.retrieve_offsets(None)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                offsets = trace.retrieve_offsets(None)
+                offsets2 = trace.retrieve_offsets(None)
             trace.close()
 
             self.assertEqual(len(offsets), 10)

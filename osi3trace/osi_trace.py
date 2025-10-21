@@ -7,6 +7,7 @@ from pathlib import Path
 import struct
 
 from abc import ABC, abstractmethod
+from typing_extensions import deprecated
 
 from mcap_protobuf.decoder import DecoderFactory
 from mcap.reader import make_reader
@@ -139,40 +140,38 @@ class OSITrace:
     def close(self):
         return self.reader.close()
 
+    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def retrieve_offsets(self, limit=None):
         if isinstance(self.reader, OSITraceSingle):
             return self.reader.retrieve_offsets(limit)
         raise NotImplementedError("Offsets are only supported for single-channel traces.")
 
+    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def retrieve_message(self, index=None, skip=False):
         if isinstance(self.reader, OSITraceSingle):
             return self.reader.retrieve_message(index, skip)
         raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
 
+    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def get_message_by_index(self, index):
         if isinstance(self.reader, OSITraceSingle):
             return self.reader.get_message_by_index(index)
         raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
 
+    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def get_messages_in_index_range(self, begin, end):
         if isinstance(self.reader, OSITraceSingle):
             return self.reader.get_messages_in_index_range(begin, end)
         raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
 
     def get_available_topics(self):
-        if isinstance(self.reader, OSITraceMulti):
-            return self.reader.get_available_topics()
-        raise NotImplementedError("Getting available topics is only supported for multi-channel traces.")
+        return self.reader.get_available_topics()
     
     def get_file_metadata(self):
-        if isinstance(self.reader, OSITraceMulti):
-            return self.reader.get_file_metadata()
-        raise NotImplementedError("Getting file metadata is only supported for multi-channel traces.")
+        return self.reader.get_file_metadata()
     
     def get_channel_metadata(self):
-        if isinstance(self.reader, OSITraceMulti):
-            return self.reader.get_channel_metadata()
-        raise NotImplementedError("Getting channel metadata is only supported for multi-channel traces.")
+        return self.reader.get_channel_metadata()
 
 
 class ReaderBase(ABC):
@@ -190,6 +189,18 @@ class ReaderBase(ABC):
     def close(self):
         pass
 
+    @abstractmethod
+    def get_available_topics(self):
+        pass
+
+    @abstractmethod
+    def get_file_metadata(self):
+        pass
+
+    @abstractmethod
+    def get_channel_metadata(self):
+        pass
+
 
 class OSITraceSingle(ReaderBase):
     """OSI single-channel trace reader"""
@@ -203,21 +214,16 @@ class OSITraceSingle(ReaderBase):
         self.message_cache = {} if cache_messages else None
         self._header_length = 4
         if path:
-            self.from_file(path, type_name, cache_messages)
+            self.type = OSITrace.map_message_type(type_name)
 
-    def from_file(self, path, type_name="SensorView", cache_messages=False):
-        """Import a trace from a file"""
-        self.type = OSITrace.map_message_type(type_name)
-
-        if path.suffix.lower() in [".lzma", ".xz"]:
-            self.file = lzma.open(path, "rb")
-        else:
-            self.file = open(path, "rb")
-
-        self.read_complete = False
-        self.current_index = 0
-        self.message_offsets = [0]
-        self.message_cache = {} if cache_messages else None
+            if path.suffix.lower() in [".lzma", ".xz"]:
+                self.file = lzma.open(path, "rb")
+            else:
+                self.file = open(path, "rb")
+            self.read_complete = False
+            self.current_index = 0
+            self.message_offsets = [0]
+            self.message_cache = {} if cache_messages else None
 
     def retrieve_offsets(self, limit=None):
         """Retrieve the offsets of the messages from the file."""
@@ -337,6 +343,15 @@ class OSITraceSingle(ReaderBase):
         self.read_limit = None
         self.type = None
 
+    def get_available_topics(self):
+        raise NotImplementedError("Getting available topics is only supported for multi-channel traces.")
+
+    def get_file_metadata(self):
+        raise NotImplementedError("Getting file metadata is only supported for multi-channel traces.")
+
+    def get_channel_metadata(self):
+        raise NotImplementedError("Getting channel metadata is only supported for multi-channel traces.")
+
 
 class OSITraceMulti(ReaderBase):
     """OSI multi-channel trace reader"""
@@ -387,7 +402,7 @@ class OSITraceMulti(ReaderBase):
             if channel.topic == self.topic:
                 return channel.metadata
         return None
-    
+
     def get_message_type(self):
         for channel in self._summary.channels.values():
             if channel.topic == self.topic:
@@ -397,7 +412,7 @@ class OSITraceMulti(ReaderBase):
                 else:
                     raise ValueError(f"Schema '{schema.name}' is not an 'osi3.' schema.")
         return None
-    
+
     def _channel_is_of_type(self, channel, type_name):
         schema = self._summary.schemas[channel.schema_id]  
         return type_name is None or schema.name == f"osi3.{type_name}"

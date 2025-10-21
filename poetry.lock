@@ -370,8 +370,7 @@ version = "4.14.1"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
-groups = ["dev"]
-markers = "python_version == \"3.10\""
+groups = ["main", "dev"]
 files = [
     {file = "typing_extensions-4.14.1-py3-none-any.whl", hash = "sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76"},
     {file = "typing_extensions-4.14.1.tar.gz", hash = "sha256:38b39f4aeeab64884ce9f74c94263ef78f3c22467c8724005483154c26648d36"},
@@ -492,4 +491,4 @@ cffi = ["cffi (>=1.17) ; python_version >= \"3.13\" and platform_python_implemen
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "d8d891dd9c0a16ba9080b4960ccdd5dd1048f27d04f1026e221132d9023df1ab"
+content-hash = "2fb49d217c020e5dacb4a9ccbd6e9e833deaf265dc7279ef98ad6106dcf90d95"
