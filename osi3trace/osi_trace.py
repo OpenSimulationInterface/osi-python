@@ -63,9 +63,9 @@ class OSITrace:
     def __getattr__(self, name):
         """
         This method forwards the getattr call for unsuccessful legacy attribute
-        name lookups to the reader in case it is an OSITraceSingle instance.
+        name lookups to the reader in case it is an _OSITraceSingle instance.
         """
-        if name in self._legacy_ositrace_attributes and isinstance(self.reader, OSITraceSingle):
+        if name in self._legacy_ositrace_attributes and isinstance(self.reader, _OSITraceSingle):
             return getattr(self.reader, name)
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
     
@@ -73,17 +73,17 @@ class OSITrace:
         """
         This method overwrites the default setter and forwards setattr calls for
         legacy attribute names to the reader in case the reader is an
-        OSITraceSingle instance. Otherwise it uses the default setter.
+        _OSITraceSingle instance. Otherwise it uses the default setter.
         """
         reader = super().__getattribute__("reader") if "reader" in self.__dict__ else None
-        if name in self._legacy_ositrace_attributes and isinstance(reader, OSITraceSingle):
+        if name in self._legacy_ositrace_attributes and isinstance(reader, _OSITraceSingle):
             setattr(reader, name, value)
         else:
             super().__setattr__(name, value)
 
     def __dir__(self):
         attrs = super().__dir__()
-        if isinstance(self.reader, OSITraceSingle):
+        if isinstance(self.reader, _OSITraceSingle):
             attrs += list(self._legacy_ositrace_attributes)
         return attrs
     
@@ -107,9 +107,9 @@ class OSITrace:
             raise FileNotFoundError("File not found")
 
         if path.suffix.lower() == ".mcap":
-            return OSITraceMulti(path, type_name, topic)
+            return _OSITraceMulti(path, type_name, topic)
         elif path.suffix.lower() in [".osi", ".lzma", ".xz"]:
-            return OSITraceSingle(path, type_name, cache_messages)
+            return _OSITraceSingle(path, type_name, cache_messages)
         else:
             raise ValueError(f"Unsupported file format: '{path.suffix}'")
 
@@ -142,25 +142,25 @@ class OSITrace:
 
     @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def retrieve_offsets(self, limit=None):
-        if isinstance(self.reader, OSITraceSingle):
+        if isinstance(self.reader, _OSITraceSingle):
             return self.reader.retrieve_offsets(limit)
         raise NotImplementedError("Offsets are only supported for single-channel traces.")
 
     @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def retrieve_message(self, index=None, skip=False):
-        if isinstance(self.reader, OSITraceSingle):
+        if isinstance(self.reader, _OSITraceSingle):
             return self.reader.retrieve_message(index, skip)
         raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
 
     @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def get_message_by_index(self, index):
-        if isinstance(self.reader, OSITraceSingle):
+        if isinstance(self.reader, _OSITraceSingle):
             return self.reader.get_message_by_index(index)
         raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
 
     @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
     def get_messages_in_index_range(self, begin, end):
-        if isinstance(self.reader, OSITraceSingle):
+        if isinstance(self.reader, _OSITraceSingle):
             return self.reader.get_messages_in_index_range(begin, end)
         raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
 
@@ -174,7 +174,7 @@ class OSITrace:
         return self.reader.get_channel_metadata()
 
 
-class ReaderBase(ABC):
+class _ReaderBase(ABC):
     """Common interface for trace readers"""
     
     @abstractmethod
@@ -202,7 +202,7 @@ class ReaderBase(ABC):
         pass
 
 
-class OSITraceSingle(ReaderBase):
+class _OSITraceSingle(_ReaderBase):
     """OSI single-channel trace reader"""
     
     def __init__(self, path=None, type_name="SensorView", cache_messages=False):
@@ -353,7 +353,7 @@ class OSITraceSingle(ReaderBase):
         raise NotImplementedError("Getting channel metadata is only supported for multi-channel traces.")
 
 
-class OSITraceMulti(ReaderBase):
+class _OSITraceMulti(_ReaderBase):
     """OSI multi-channel trace reader"""
 
     def __init__(self, path, type_name, topic):
