@@ -358,7 +358,7 @@ class _OSITraceMulti(_ReaderBase):
 
     def __init__(self, path, type_name, topic):
         self._file = open(path, "rb")
-        self._mcap_reader = make_reader(self._file, decoder_factories=[DecoderFactory()])
+        self._mcap_reader = make_reader(self._file)
         self._iter = None
         self._summary = self._mcap_reader.get_summary()
         available_topics = self.get_available_topics(type_name)
@@ -376,9 +376,14 @@ class _OSITraceMulti(_ReaderBase):
     def __iter__(self):
         """Stateful iterator over the channel's messages in log time order."""
         if self._iter is None:
-            self._iter = self._mcap_reader.iter_decoded_messages(topics=[self.topic])
-        for message in self._iter:
-            yield message.decoded_message
+            self._iter = self._mcap_reader.iter_messages(topics=[self.topic])
+
+        message_class = OSITrace.map_message_type(self.get_message_type())
+
+        for _, _, message in self._iter:
+            msg = message_class()
+            msg.ParseFromString(message.data)
+            yield msg
     
     def close(self):
         if self._file:
