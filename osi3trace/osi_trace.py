@@ -40,7 +40,7 @@ MESSAGES_TYPE = {
 
 class OSITrace:
     """This class can import and decode OSI single- and multi-channel trace files."""
-    
+
     @staticmethod
     def map_message_type(type_name):
         """Map the type name to the protobuf message type."""
@@ -50,7 +50,7 @@ class OSITrace:
     def message_types():
         """Message types that OSITrace supports."""
         return list(MESSAGES_TYPE.keys())
-    
+
     _legacy_ositrace_attributes = {
         "type",
         "file",
@@ -65,18 +65,26 @@ class OSITrace:
         This method forwards the getattr call for unsuccessful legacy attribute
         name lookups to the reader in case it is an _OSITraceSingle instance.
         """
-        if name in self._legacy_ositrace_attributes and isinstance(self.reader, _OSITraceSingle):
+        if name in self._legacy_ositrace_attributes and isinstance(
+            self.reader, _OSITraceSingle
+        ):
             return getattr(self.reader, name)
-        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
-    
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+
     def __setattr__(self, name, value):
         """
         This method overwrites the default setter and forwards setattr calls for
         legacy attribute names to the reader in case the reader is an
         _OSITraceSingle instance. Otherwise it uses the default setter.
         """
-        reader = super().__getattribute__("reader") if "reader" in self.__dict__ else None
-        if name in self._legacy_ositrace_attributes and isinstance(reader, _OSITraceSingle):
+        reader = (
+            super().__getattribute__("reader") if "reader" in self.__dict__ else None
+        )
+        if name in self._legacy_ositrace_attributes and isinstance(
+            reader, _OSITraceSingle
+        ):
             setattr(reader, name, value)
         else:
             super().__setattr__(name, value)
@@ -86,11 +94,13 @@ class OSITrace:
         if isinstance(self.reader, _OSITraceSingle):
             attrs += list(self._legacy_ositrace_attributes)
         return attrs
-    
-    def __init__(self, path=None, type_name="SensorView", cache_messages=False, topic=None):
+
+    def __init__(
+        self, path=None, type_name="SensorView", cache_messages=False, topic=None
+    ):
         """
         Initializes the trace reader depending on the trace file format.
-        
+
         Args:
             path (str): The path to the trace file.
             type_name (str): The type name of the messages in the trace; check supported message types with `OSITrace.message_types()`.
@@ -100,8 +110,10 @@ class OSITrace:
         self.reader = None
 
         if path is not None:
-            self.reader = self._init_reader(Path(path), type_name, cache_messages, topic)
-            
+            self.reader = self._init_reader(
+                Path(path), type_name, cache_messages, topic
+            )
+
     def _init_reader(self, path, type_name, cache_messages, topic):
         if not path.exists():
             raise FileNotFoundError("File not found")
@@ -116,7 +128,7 @@ class OSITrace:
     def from_file(self, path, type_name="SensorView", cache_messages=False, topic=None):
         """
         Initializes the trace reader depending on the trace file format.
-        
+
         Args:
             path (str): The path to the trace file.
             type_name (str): The type name of the messages in the trace; check supported message types with `OSITrace.message_types()`.
@@ -140,47 +152,63 @@ class OSITrace:
     def close(self):
         return self.reader.close()
 
-    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
+    @deprecated(
+        "This is a legacy interface only supported for single-channel traces, which will be removed in future versions."
+    )
     def retrieve_offsets(self, limit=None):
         if isinstance(self.reader, _OSITraceSingle):
             return self.reader.retrieve_offsets(limit)
-        raise NotImplementedError("Offsets are only supported for single-channel traces.")
+        raise NotImplementedError(
+            "Offsets are only supported for single-channel traces."
+        )
 
-    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
+    @deprecated(
+        "This is a legacy interface only supported for single-channel traces, which will be removed in future versions."
+    )
     def retrieve_message(self, index=None, skip=False):
         if isinstance(self.reader, _OSITraceSingle):
             return self.reader.retrieve_message(index, skip)
-        raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
+        raise NotImplementedError(
+            "Index-based message retrieval is only supported for single-channel traces."
+        )
 
-    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
+    @deprecated(
+        "This is a legacy interface only supported for single-channel traces, which will be removed in future versions."
+    )
     def get_message_by_index(self, index):
         if isinstance(self.reader, _OSITraceSingle):
             return self.reader.get_message_by_index(index)
-        raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
+        raise NotImplementedError(
+            "Index-based message retrieval is only supported for single-channel traces."
+        )
 
-    @deprecated("This is a legacy interface only supported for single-channel traces, which will be removed in future versions.")
+    @deprecated(
+        "This is a legacy interface only supported for single-channel traces, which will be removed in future versions."
+    )
     def get_messages_in_index_range(self, begin, end):
         if isinstance(self.reader, _OSITraceSingle):
             return self.reader.get_messages_in_index_range(begin, end)
-        raise NotImplementedError("Index-based message retrieval is only supported for single-channel traces.")
+        raise NotImplementedError(
+            "Index-based message retrieval is only supported for single-channel traces."
+        )
 
     def get_available_topics(self):
         return self.reader.get_available_topics()
-    
+
     def get_file_metadata(self):
         return self.reader.get_file_metadata()
-    
+
     def get_channel_metadata(self):
         return self.reader.get_channel_metadata()
 
 
 class _ReaderBase(ABC):
     """Common interface for trace readers"""
-    
+
     @abstractmethod
     def restart(self, index=None):
         pass
-    
+
     @abstractmethod
     def __iter__(self):
         pass
@@ -204,7 +232,7 @@ class _ReaderBase(ABC):
 
 class _OSITraceSingle(_ReaderBase):
     """OSI single-channel trace reader"""
-    
+
     def __init__(self, path=None, type_name="SensorView", cache_messages=False):
         self.type = OSITrace.map_message_type(type_name)
         self.file = None
@@ -344,13 +372,19 @@ class _OSITraceSingle(_ReaderBase):
         self.type = None
 
     def get_available_topics(self):
-        raise NotImplementedError("Getting available topics is only supported for multi-channel traces.")
+        raise NotImplementedError(
+            "Getting available topics is only supported for multi-channel traces."
+        )
 
     def get_file_metadata(self):
-        raise NotImplementedError("Getting file metadata is only supported for multi-channel traces.")
+        raise NotImplementedError(
+            "Getting file metadata is only supported for multi-channel traces."
+        )
 
     def get_channel_metadata(self):
-        raise NotImplementedError("Getting channel metadata is only supported for multi-channel traces.")
+        raise NotImplementedError(
+            "Getting channel metadata is only supported for multi-channel traces."
+        )
 
 
 class _OSITraceMulti(_ReaderBase):
@@ -365,12 +399,16 @@ class _OSITraceMulti(_ReaderBase):
         if topic == None:
             topic = next(iter(available_topics), None)
         if topic not in available_topics:
-            raise ValueError(f"The requested topic '{topic}' is not present in the trace file or is not of type '{type_name}'.")
+            raise ValueError(
+                f"The requested topic '{topic}' is not present in the trace file or is not of type '{type_name}'."
+            )
         self.topic = topic
-    
+
     def restart(self, index=None):
         if index != None:
-            raise NotImplementedError("Restarting from a given index is not supported for multi-channel traces.")
+            raise NotImplementedError(
+                "Restarting from a given index is not supported for multi-channel traces."
+            )
         self._iter = None
 
     def __iter__(self):
@@ -384,7 +422,7 @@ class _OSITraceMulti(_ReaderBase):
             msg = message_class()
             msg.ParseFromString(message.data)
             yield msg
-    
+
     def close(self):
         if self._file:
             self._file.close()
@@ -393,8 +431,12 @@ class _OSITraceMulti(_ReaderBase):
         self._summary = None
         self._iter = None
 
-    def get_available_topics(self, type_name = None):
-        return [channel.topic for channel in self._summary.channels.values() if self._channel_is_of_type(channel, type_name)]
+    def get_available_topics(self, type_name=None):
+        return [
+            channel.topic
+            for channel in self._summary.channels.values()
+            if self._channel_is_of_type(channel, type_name)
+        ]
 
     def get_file_metadata(self):
         metadata = []
@@ -415,9 +457,11 @@ class _OSITraceMulti(_ReaderBase):
                 if schema.name.startswith("osi3."):
                     return schema.name[len("osi3.") :]
                 else:
-                    raise ValueError(f"Schema '{schema.name}' is not an 'osi3.' schema.")
+                    raise ValueError(
+                        f"Schema '{schema.name}' is not an 'osi3.' schema."
+                    )
         return None
 
     def _channel_is_of_type(self, channel, type_name):
-        schema = self._summary.schemas[channel.schema_id]  
+        schema = self._summary.schemas[channel.schema_id]
         return type_name is None or schema.name == f"osi3.{type_name}"
