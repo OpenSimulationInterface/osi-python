@@ -4,6 +4,7 @@ import unittest
 import warnings
 
 from osi3trace.osi_trace import OSITrace
+from osi3 import __version__ as osi3_version
 from osi3.osi_sensorview_pb2 import SensorView
 from osi3.osi_sensorviewconfiguration_pb2 import SensorViewConfiguration
 from osi3.osi_groundtruth_pb2 import GroundTruth
@@ -18,6 +19,7 @@ from osi3.osi_streamingupdate_pb2 import StreamingUpdate
 from mcap.writer import Writer
 from mcap.well_known import MessageEncoding
 
+from google.protobuf import __version__ as google_protobuf_version
 from google.protobuf.descriptor import FileDescriptor
 from google.protobuf.descriptor_pb2 import FileDescriptorSet
 
@@ -245,36 +247,63 @@ class TestOSITraceMulti(unittest.TestCase):
 
 
 def build_file_descriptor_set(message_class) -> FileDescriptorSet:
-        file_descriptor_set = FileDescriptorSet()
-        seen_dependencies = set()
+    file_descriptor_set = FileDescriptorSet()
+    seen_dependencies = set()
 
-        def append_file_descriptor(file_descriptor: FileDescriptor):
-            for dep in file_descriptor.dependencies:
-                if dep.name not in seen_dependencies:
-                    seen_dependencies.add(dep.name)
-                    append_file_descriptor(dep)
-            file_descriptor.CopyToProto(file_descriptor_set.file.add())
+    def append_file_descriptor(file_descriptor: FileDescriptor):
+        for dep in file_descriptor.dependencies:
+            if dep.name not in seen_dependencies:
+                seen_dependencies.add(dep.name)
+                append_file_descriptor(dep)
+        file_descriptor.CopyToProto(file_descriptor_set.file.add())
 
-        append_file_descriptor(message_class.DESCRIPTOR.file)
-        return file_descriptor_set
+    append_file_descriptor(message_class.DESCRIPTOR.file)
+    return file_descriptor_set
 
 
-def create_sample_sv(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(SensorView)
+def prepare_mcap_writer(path):
+    mcap_writer = Writer(
+        output=str(path),
+    )
+
+    mcap_writer.start(library=f"osi-python mcap test suite")
+    mcap_writer.add_metadata(
+        name="net.asam.osi.trace",
+        data={
+            "version": osi3_version,
+            "min_osi_version": osi3_version,
+            "max_osi_version": osi3_version,
+            "min_protobuf_version": google_protobuf_version,
+            "max_protobuf_version": google_protobuf_version,
+            "description": "Test trace created by osi-python test suite",
+        },
+    )
+    return mcap_writer
+
+
+def add_channel(mcap_writer, message_class, topic_name):
+    file_descriptor_set = build_file_descriptor_set(message_class)
     schema_id = mcap_writer.register_schema(
-        name="osi3.SensorView",
+        name=f"osi3.{message_class.__name__}",
         encoding=MessageEncoding.Protobuf,
         data=file_descriptor_set.SerializeToString(),
     )
-    topic_name = "SensorViewTopic"
     channel_id = mcap_writer.register_channel(
         topic=topic_name,
         message_encoding=MessageEncoding.Protobuf,
         schema_id=schema_id,
-        metadata={},
+        metadata={
+            "net.asam.osi.trace.channel.osi_version": osi3_version,
+            "net.asam.osi.trace.channel.protobuf_version": google_protobuf_version,
+            "net.asam.osi.trace.channel.description": f"Channel for OSI message type {message_class.__name__}",
+        },
     )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    return channel_id
+
+
+def create_sample_sv(path):
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, SensorView, "SensorViewTopic")
 
     sensorview = SensorView()
 
@@ -328,30 +357,19 @@ def create_sample_sv(path):
         time = sensorview.timestamp.seconds + sensorview.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=sensorview.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_svc(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(SensorViewConfiguration)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.SensorViewConfiguration",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(
+        mcap_writer, SensorViewConfiguration, "SensorViewConfigurationTopic"
     )
-    topic_name = "SensorViewConfigurationTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
 
     sensorviewconfig = SensorViewConfiguration()
 
@@ -372,30 +390,17 @@ def create_sample_svc(path):
     time = 0
     mcap_writer.add_message(
         channel_id=channel_id,
-        log_time=int(time*1000000000),
+        log_time=int(time * 1000000000),
         data=sensorviewconfig.SerializeToString(),
-        publish_time=int(time*1000000000),
+        publish_time=int(time * 1000000000),
     )
 
     mcap_writer.finish()
 
 
 def create_sample_gt(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(GroundTruth)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.GroundTruth",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "GroundTruthTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, GroundTruth, "GroundTruthTopic")
 
     ground_truth = GroundTruth()
 
@@ -432,30 +437,17 @@ def create_sample_gt(path):
         time = ground_truth.timestamp.seconds + ground_truth.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=ground_truth.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_hvd(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(HostVehicleData)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.HostVehicleData",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "HostVehicleDataTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, HostVehicleData, "HostVehicleDataTopic")
 
     hostvehicledata = HostVehicleData()
 
@@ -489,30 +481,17 @@ def create_sample_hvd(path):
         time = hostvehicledata.timestamp.seconds + hostvehicledata.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=hostvehicledata.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_sd(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(SensorData)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.SensorData",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "SensorDataTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, SensorData, "SensorDataTopic")
 
     sensordata = SensorData()
 
@@ -551,30 +530,17 @@ def create_sample_sd(path):
         time = sensordata.timestamp.seconds + sensordata.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=sensordata.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_tc(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(TrafficCommand)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.TrafficCommand",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "TrafficCommandTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, TrafficCommand, "TrafficCommandTopic")
 
     trafficcommand = TrafficCommand()
 
@@ -602,30 +568,19 @@ def create_sample_tc(path):
         time = trafficcommand.timestamp.seconds + trafficcommand.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=trafficcommand.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_tcu(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(TrafficCommandUpdate)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.TrafficCommandUpdate",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(
+        mcap_writer, TrafficCommandUpdate, "TrafficCommandUpdateTopic"
     )
-    topic_name = "TrafficCommandUpdateTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
 
     trafficcommandupdate = TrafficCommandUpdate()
 
@@ -649,33 +604,23 @@ def create_sample_tcu(path):
         action.dismissed_action_id.value = 1000 + i
         action.failure_reason = "Cannot complete!"
 
-        time = trafficcommandupdate.timestamp.seconds + trafficcommandupdate.timestamp.nanos / 1e9
+        time = (
+            trafficcommandupdate.timestamp.seconds
+            + trafficcommandupdate.timestamp.nanos / 1e9
+        )
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=trafficcommandupdate.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_tu(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(TrafficUpdate)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.TrafficUpdate",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "TrafficUpdateTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, TrafficUpdate, "TrafficUpdateTopic")
 
     trafficupdate = TrafficUpdate()
 
@@ -712,30 +657,17 @@ def create_sample_tu(path):
         time = trafficupdate.timestamp.seconds + trafficupdate.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=trafficupdate.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_mr(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(MotionRequest)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.MotionRequest",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "MotionRequestTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, MotionRequest, "MotionRequestTopic")
 
     motionrequest = MotionRequest()
 
@@ -771,30 +703,17 @@ def create_sample_mr(path):
         time = motionrequest.timestamp.seconds + motionrequest.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=motionrequest.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
 
 
 def create_sample_su(path):
-    mcap_writer = Writer(output=str(path),)
-    file_descriptor_set = build_file_descriptor_set(StreamingUpdate)
-    schema_id = mcap_writer.register_schema(
-        name="osi3.StreamingUpdate",
-        encoding=MessageEncoding.Protobuf,
-        data=file_descriptor_set.SerializeToString(),
-    )
-    topic_name = "StreamingUpdateTopic"
-    channel_id = mcap_writer.register_channel(
-        topic=topic_name,
-        message_encoding=MessageEncoding.Protobuf,
-        schema_id=schema_id,
-        metadata={},
-    )
-    mcap_writer.start(library=f"osi-python mcap tests")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, StreamingUpdate, "StreamingUpdateTopic")
 
     streamingupdate = StreamingUpdate()
 
@@ -831,9 +750,9 @@ def create_sample_su(path):
         time = streamingupdate.timestamp.seconds + streamingupdate.timestamp.nanos / 1e9
         mcap_writer.add_message(
             channel_id=channel_id,
-            log_time=int(time*1000000000),
+            log_time=int(time * 1000000000),
             data=streamingupdate.SerializeToString(),
-            publish_time=int(time*1000000000),
+            publish_time=int(time * 1000000000),
         )
 
     mcap_writer.finish()
