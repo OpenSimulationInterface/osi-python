@@ -255,6 +255,59 @@ class TestOSITraceMulti(unittest.TestCase):
 
             self.assertTrue(os.path.exists(path_output))
 
+    def test_osi_trace_sv_and_sd(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            path_output1 = os.path.join(tmpdirname, "output_svsd1.txth")
+            path_output2 = os.path.join(tmpdirname, "output_svsd2.txth")
+            path_output3 = os.path.join(tmpdirname, "output_svsd3.txth")
+            path_input = os.path.join(tmpdirname, "input_svsd.mcap")
+            create_sample_svsd(path_input)
+
+            # Select channel via type name
+            trace = OSITrace(path_input, "SensorView")
+            with open(path_output1, "wt") as f:
+                count = 0
+                for message in trace:
+                    self.assertIsInstance(message, SensorView)
+                    count += 1
+                    f.write(str(message))
+                self.assertEqual(count, 10)
+            trace.close()
+
+            # Select channel via type name
+            trace = OSITrace(path_input, "SensorData")
+            with open(path_output2, "wt") as f:
+                count = 0
+                for message in trace:
+                    self.assertIsInstance(message, SensorData)
+                    count += 1
+                    f.write(str(message))
+                self.assertEqual(count, 10)
+            trace.close()
+
+            # Select channel via channel name and type name
+            trace = OSITrace(path_input, "SensorData", False, "SensorDataTopic")
+            with open(path_output3, "wt") as f:
+                count = 0
+                for message in trace:
+                    self.assertIsInstance(message, SensorData)
+                    count += 1
+                    f.write(str(message))
+                self.assertEqual(count, 10)
+            trace.close()
+
+            # Mismatched channel name and type name
+            with self.assertRaises(ValueError):
+                trace = OSITrace(path_input, "SensorData", False, "SensorViewTopic")
+
+            # Unknown channel name
+            with self.assertRaises(ValueError):
+                trace = OSITrace(path_input, "SensorData", False, "UnknownTopic")
+
+            self.assertTrue(os.path.exists(path_output1))
+            self.assertTrue(os.path.exists(path_output2))
+            self.assertTrue(os.path.exists(path_output3))
+
 
 def build_file_descriptor_set(message_class) -> FileDescriptorSet:
     file_descriptor_set = FileDescriptorSet()
@@ -762,6 +815,110 @@ def create_sample_su(path):
             channel_id=channel_id,
             log_time=int(time * 1000000000),
             data=streamingupdate.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
+
+    mcap_writer.finish()
+
+
+def create_sample_svsd(path):
+    mcap_writer = prepare_mcap_writer(path)
+    channel_sv = add_channel(mcap_writer, SensorView, "SensorViewTopic")
+    channel_sd = add_channel(mcap_writer, SensorData, "SensorDataTopic")
+
+    sensorview = SensorView()
+
+    sensorview.version.version_major = 3
+    sensorview.version.version_minor = 0
+    sensorview.version.version_patch = 0
+
+    sensorview.timestamp.seconds = 0
+    sensorview.timestamp.nanos = 0
+
+    sensorview.sensor_id.value = 42
+
+    sensorview.host_vehicle_id.value = 114
+
+    sv_ground_truth = sensorview.global_ground_truth
+    sv_ground_truth.version.version_major = 3
+    sv_ground_truth.version.version_minor = 0
+    sv_ground_truth.version.version_patch = 0
+
+    sv_ground_truth.timestamp.seconds = 0
+    sv_ground_truth.timestamp.nanos = 0
+
+    sv_ground_truth.host_vehicle_id.value = 114
+
+    moving_object = sv_ground_truth.moving_object.add()
+    moving_object.id.value = 114
+
+    sensordata = SensorData()
+
+    sensordata.version.version_major = 3
+    sensordata.version.version_minor = 0
+    sensordata.version.version_patch = 0
+
+    sensordata.timestamp.seconds = 0
+    sensordata.timestamp.nanos = 0
+
+    sensordata.sensor_id.value = 42
+
+    sdmoving_object = sensordata.moving_object.add()
+    sdmoving_object.header.tracking_id.value = 1
+    gt_id = sdmoving_object.header.ground_truth_id.add()
+    gt_id.value = 114
+
+    # Generate 10 OSI messages for 9 seconds
+    for i in range(10):
+        # Increment the time
+        sensorview.timestamp.seconds += 1
+        sensorview.timestamp.nanos += 100000
+
+        sv_ground_truth.timestamp.seconds += 1
+        sv_ground_truth.timestamp.nanos += 100000
+
+        sensordata.timestamp.seconds += 1
+        sensordata.timestamp.nanos += 100000
+
+        # SensorView moving object
+        moving_object.vehicle_classification.type = 2
+
+        moving_object.base.dimension.length = 5
+        moving_object.base.dimension.width = 2
+        moving_object.base.dimension.height = 1
+
+        moving_object.base.position.x = 0.0 + i
+        moving_object.base.position.y = 0.0
+        moving_object.base.position.z = 0.0
+
+        moving_object.base.orientation.roll = 0.0
+        moving_object.base.orientation.pitch = 0.0
+        moving_object.base.orientation.yaw = 0.0
+
+        # SensorData moving object
+        sdmoving_object.base.dimension.length = 5
+        sdmoving_object.base.dimension.width = 2
+        sdmoving_object.base.dimension.height = 1
+
+        sdmoving_object.base.position.x = 0.0 + i
+        sdmoving_object.base.position.y = 0.0
+        sdmoving_object.base.position.z = 0.0
+
+        sdmoving_object.base.orientation.roll = 0.0
+        sdmoving_object.base.orientation.pitch = 0.0
+        sdmoving_object.base.orientation.yaw = 0.0
+
+        time = sensorview.timestamp.seconds + sensorview.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_sv,
+            log_time=int(time * 1000000000),
+            data=sensorview.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
+        mcap_writer.add_message(
+            channel_id=channel_sd,
+            log_time=int(time * 1000000000),
+            data=sensordata.SerializeToString(),
             publish_time=int(time * 1000000000),
         )
 
