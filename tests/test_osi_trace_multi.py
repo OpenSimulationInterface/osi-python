@@ -33,16 +33,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input)
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, SensorView)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -55,16 +56,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "SensorViewConfiguration")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, SensorViewConfiguration)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 1)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
-                    self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 1)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -77,16 +79,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "GroundTruth")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, GroundTruth)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -99,16 +102,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "HostVehicleData")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, HostVehicleData)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -121,16 +125,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "SensorData")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, SensorData)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -143,16 +148,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "TrafficCommand")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, TrafficCommand)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -165,16 +171,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "TrafficCommandUpdate")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, TrafficCommandUpdate)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -187,16 +194,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "TrafficUpdate")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, TrafficUpdate)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -209,16 +217,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "MotionRequest")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, MotionRequest)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -231,16 +240,17 @@ class TestOSITraceMulti(unittest.TestCase):
 
             trace = OSITrace(path_input, "StreamingUpdate")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, StreamingUpdate)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
+                with self.assertRaises(NotImplementedError):
                     self.assertEqual(len(trace.retrieve_offsets()), 10)
-                except NotImplementedError:
-                    pass
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
