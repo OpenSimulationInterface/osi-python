@@ -12,7 +12,10 @@ readme = "README.md"
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
+    "typing-extensions~=4.9",
     "protobuf>=6.30.2",
+    "mcap>=1.2.2",
+    "mcap-protobuf-support>=0.5.3"
 ]
 
 [project.urls]

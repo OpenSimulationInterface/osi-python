@@ -4,6 +4,7 @@ import unittest
 import warnings
 
 from osi3trace.osi_trace import OSITrace
+from osi3 import __version__ as osi3_version
 from osi3.osi_sensorview_pb2 import SensorView
 from osi3.osi_sensorviewconfiguration_pb2 import SensorViewConfiguration
 from osi3.osi_groundtruth_pb2 import GroundTruth
@@ -15,25 +16,34 @@ from osi3.osi_trafficupdate_pb2 import TrafficUpdate
 from osi3.osi_motionrequest_pb2 import MotionRequest
 from osi3.osi_streamingupdate_pb2 import StreamingUpdate
 
-import struct
+from mcap.writer import Writer
+from mcap.well_known import MessageEncoding
+
+from google.protobuf import __version__ as google_protobuf_version
+from google.protobuf.descriptor import FileDescriptor
+from google.protobuf.descriptor_pb2 import FileDescriptorSet
 
 
-class TestOSITrace(unittest.TestCase):
+class TestOSITraceMulti(unittest.TestCase):
     def test_osi_trace_sv(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_sv.txth")
-            path_input = os.path.join(tmpdirname, "input_sv.osi")
+            path_input = os.path.join(tmpdirname, "input_sv.mcap")
             create_sample_sv(path_input)
 
             trace = OSITrace(path_input)
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, SensorView)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -41,18 +51,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_svc(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_svc.txth")
-            path_input = os.path.join(tmpdirname, "input_svc.osi")
+            path_input = os.path.join(tmpdirname, "input_svc.mcap")
             create_sample_svc(path_input)
 
             trace = OSITrace(path_input, "SensorViewConfiguration")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, SensorViewConfiguration)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 1)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 1)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 1)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -60,18 +74,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_gt(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_gt.txth")
-            path_input = os.path.join(tmpdirname, "input_gt.osi")
+            path_input = os.path.join(tmpdirname, "input_gt.mcap")
             create_sample_gt(path_input)
 
             trace = OSITrace(path_input, "GroundTruth")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, GroundTruth)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -79,18 +97,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_hvd(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_hvd.txth")
-            path_input = os.path.join(tmpdirname, "input_hvd.osi")
+            path_input = os.path.join(tmpdirname, "input_hvd.mcap")
             create_sample_hvd(path_input)
 
             trace = OSITrace(path_input, "HostVehicleData")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, HostVehicleData)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -98,18 +120,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_sd(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_sd.txth")
-            path_input = os.path.join(tmpdirname, "input_sd.osi")
+            path_input = os.path.join(tmpdirname, "input_sd.mcap")
             create_sample_sd(path_input)
 
             trace = OSITrace(path_input, "SensorData")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, SensorData)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -117,18 +143,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_tc(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_tc.txth")
-            path_input = os.path.join(tmpdirname, "input_tc.osi")
+            path_input = os.path.join(tmpdirname, "input_tc.mcap")
             create_sample_tc(path_input)
 
             trace = OSITrace(path_input, "TrafficCommand")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, TrafficCommand)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -136,18 +166,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_tcu(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_tcu.txth")
-            path_input = os.path.join(tmpdirname, "input_tcu.osi")
+            path_input = os.path.join(tmpdirname, "input_tcu.mcap")
             create_sample_tcu(path_input)
 
             trace = OSITrace(path_input, "TrafficCommandUpdate")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, TrafficCommandUpdate)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -155,18 +189,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_tu(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_tu.txth")
-            path_input = os.path.join(tmpdirname, "input_tu.osi")
+            path_input = os.path.join(tmpdirname, "input_tu.mcap")
             create_sample_tu(path_input)
 
             trace = OSITrace(path_input, "TrafficUpdate")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, TrafficUpdate)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -174,18 +212,22 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_mr(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_mr.txth")
-            path_input = os.path.join(tmpdirname, "input_mr.osi")
+            path_input = os.path.join(tmpdirname, "input_mr.mcap")
             create_sample_mr(path_input)
 
             trace = OSITrace(path_input, "MotionRequest")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, MotionRequest)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
@@ -193,41 +235,139 @@ class TestOSITrace(unittest.TestCase):
     def test_osi_trace_su(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             path_output = os.path.join(tmpdirname, "output_su.txth")
-            path_input = os.path.join(tmpdirname, "input_su.osi")
+            path_input = os.path.join(tmpdirname, "input_su.mcap")
             create_sample_su(path_input)
 
             trace = OSITrace(path_input, "StreamingUpdate")
             with open(path_output, "wt") as f:
+                count = 0
                 for message in trace:
                     self.assertIsInstance(message, StreamingUpdate)
+                    count += 1
                     f.write(str(message))
+                self.assertEqual(count, 10)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.assertEqual(len(trace.retrieve_offsets()), 10)
+                with self.assertRaises(NotImplementedError):
+                    self.assertEqual(len(trace.retrieve_offsets()), 10)
             trace.close()
 
             self.assertTrue(os.path.exists(path_output))
 
-    def test_osi_trace_offsets_robustness(self):
+    def test_osi_trace_sv_and_sd(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
-            path_input = os.path.join(tmpdirname, "input_robust.osi")
-            create_sample_sv(path_input)
+            path_output1 = os.path.join(tmpdirname, "output_svsd1.txth")
+            path_output2 = os.path.join(tmpdirname, "output_svsd2.txth")
+            path_output3 = os.path.join(tmpdirname, "output_svsd3.txth")
+            path_input = os.path.join(tmpdirname, "input_svsd.mcap")
+            create_sample_svsd(path_input)
 
-            trace = OSITrace(path_input)
-            # Test whether the function can handle be run multiple times safely
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                offsets = trace.retrieve_offsets(None)
-                offsets2 = trace.retrieve_offsets(None)
+            # Select channel via type name
+            trace = OSITrace(path_input, "SensorView")
+            with open(path_output1, "wt") as f:
+                count = 0
+                for message in trace:
+                    self.assertIsInstance(message, SensorView)
+                    count += 1
+                    f.write(str(message))
+                self.assertEqual(count, 10)
             trace.close()
 
-            self.assertEqual(len(offsets), 10)
-            self.assertEqual(offsets, offsets2)
+            # Select channel via type name
+            trace = OSITrace(path_input, "SensorData")
+            with open(path_output2, "wt") as f:
+                count = 0
+                for message in trace:
+                    self.assertIsInstance(message, SensorData)
+                    count += 1
+                    f.write(str(message))
+                self.assertEqual(count, 10)
+            trace.close()
+
+            # Select channel via channel name and type name
+            trace = OSITrace(path_input, "SensorData", False, "SensorDataTopic")
+            with open(path_output3, "wt") as f:
+                count = 0
+                for message in trace:
+                    self.assertIsInstance(message, SensorData)
+                    count += 1
+                    f.write(str(message))
+                self.assertEqual(count, 10)
+            trace.close()
+
+            # Mismatched channel name and type name
+            with self.assertRaises(ValueError):
+                trace = OSITrace(path_input, "SensorData", False, "SensorViewTopic")
+
+            # Unknown channel name
+            with self.assertRaises(ValueError):
+                trace = OSITrace(path_input, "SensorData", False, "UnknownTopic")
+
+            self.assertTrue(os.path.exists(path_output1))
+            self.assertTrue(os.path.exists(path_output2))
+            self.assertTrue(os.path.exists(path_output3))
+
+
+def build_file_descriptor_set(message_class) -> FileDescriptorSet:
+    file_descriptor_set = FileDescriptorSet()
+    seen_dependencies = set()
+
+    def append_file_descriptor(file_descriptor: FileDescriptor):
+        for dep in file_descriptor.dependencies:
+            if dep.name not in seen_dependencies:
+                seen_dependencies.add(dep.name)
+                append_file_descriptor(dep)
+        file_descriptor.CopyToProto(file_descriptor_set.file.add())
+
+    append_file_descriptor(message_class.DESCRIPTOR.file)
+    return file_descriptor_set
+
+
+def prepare_mcap_writer(path):
+    mcap_writer = Writer(
+        output=str(path),
+    )
+
+    mcap_writer.start(library=f"osi-python mcap test suite")
+    mcap_writer.add_metadata(
+        name="net.asam.osi.trace",
+        data={
+            "version": osi3_version,
+            "min_osi_version": osi3_version,
+            "max_osi_version": osi3_version,
+            "min_protobuf_version": google_protobuf_version,
+            "max_protobuf_version": google_protobuf_version,
+            "description": "Test trace created by osi-python test suite",
+        },
+    )
+    return mcap_writer
+
+
+def add_channel(mcap_writer, message_class, topic_name):
+    file_descriptor_set = build_file_descriptor_set(message_class)
+    schema_id = mcap_writer.register_schema(
+        name=f"osi3.{message_class.__name__}",
+        encoding=MessageEncoding.Protobuf,
+        data=file_descriptor_set.SerializeToString(),
+    )
+    channel_id = mcap_writer.register_channel(
+        topic=topic_name,
+        message_encoding=MessageEncoding.Protobuf,
+        schema_id=schema_id,
+        metadata={
+            "net.asam.osi.trace.channel.osi_version": osi3_version,
+            "net.asam.osi.trace.channel.protobuf_version": google_protobuf_version,
+            "net.asam.osi.trace.channel.description": f"Channel for OSI message type {message_class.__name__}",
+        },
+    )
+    return channel_id
 
 
 def create_sample_sv(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, SensorView, "SensorViewTopic")
+
     sensorview = SensorView()
 
     sensorview.version.version_major = 3
@@ -239,6 +379,8 @@ def create_sample_sv(path):
 
     sensorview.sensor_id.value = 42
 
+    sensorview.host_vehicle_id.value = 114
+
     sv_ground_truth = sensorview.global_ground_truth
     sv_ground_truth.version.version_major = 3
     sv_ground_truth.version.version_minor = 0
@@ -246,6 +388,8 @@ def create_sample_sv(path):
 
     sv_ground_truth.timestamp.seconds = 0
     sv_ground_truth.timestamp.nanos = 0
+
+    sv_ground_truth.host_vehicle_id.value = 114
 
     moving_object = sv_ground_truth.moving_object.add()
     moving_object.id.value = 114
@@ -273,15 +417,23 @@ def create_sample_sv(path):
         moving_object.base.orientation.pitch = 0.0
         moving_object.base.orientation.yaw = 0.0
 
-        """Serialize"""
-        bytes_buffer = sensorview.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = sensorview.timestamp.seconds + sensorview.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=sensorview.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_svc(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(
+        mcap_writer, SensorViewConfiguration, "SensorViewConfigurationTopic"
+    )
+
     sensorviewconfig = SensorViewConfiguration()
 
     sensorviewconfig.version.version_major = 3
@@ -298,15 +450,21 @@ def create_sample_svc(path):
     sensorviewconfig.mounting_position.orientation.pitch = 0.15
     sensorviewconfig.mounting_position.orientation.yaw = 0.25
 
-    """Serialize"""
-    bytes_buffer = sensorviewconfig.SerializeToString()
-    f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+    time = 0
+    mcap_writer.add_message(
+        channel_id=channel_id,
+        log_time=int(time * 1000000000),
+        data=sensorviewconfig.SerializeToString(),
+        publish_time=int(time * 1000000000),
+    )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_gt(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, GroundTruth, "GroundTruthTopic")
+
     ground_truth = GroundTruth()
 
     ground_truth.version.version_major = 3
@@ -339,15 +497,21 @@ def create_sample_gt(path):
         moving_object.base.orientation.pitch = 0.0
         moving_object.base.orientation.yaw = 0.0
 
-        """Serialize"""
-        bytes_buffer = ground_truth.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = ground_truth.timestamp.seconds + ground_truth.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=ground_truth.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_hvd(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, HostVehicleData, "HostVehicleDataTopic")
+
     hostvehicledata = HostVehicleData()
 
     hostvehicledata.version.version_major = 3
@@ -377,15 +541,21 @@ def create_sample_hvd(path):
         hostvehicledata.location.orientation.pitch = 0.0
         hostvehicledata.location.orientation.yaw = 0.0
 
-        """Serialize"""
-        bytes_buffer = hostvehicledata.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = hostvehicledata.timestamp.seconds + hostvehicledata.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=hostvehicledata.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_sd(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, SensorData, "SensorDataTopic")
+
     sensordata = SensorData()
 
     sensordata.version.version_major = 3
@@ -420,15 +590,21 @@ def create_sample_sd(path):
         moving_object.base.orientation.pitch = 0.0
         moving_object.base.orientation.yaw = 0.0
 
-        """Serialize"""
-        bytes_buffer = sensordata.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = sensordata.timestamp.seconds + sensordata.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=sensordata.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_tc(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, TrafficCommand, "TrafficCommandTopic")
+
     trafficcommand = TrafficCommand()
 
     trafficcommand.version.version_major = 3
@@ -452,15 +628,23 @@ def create_sample_tc(path):
 
         action.speed_action.absolute_target_speed = 10.0 + 0.5 * i
 
-        """Serialize"""
-        bytes_buffer = trafficcommand.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = trafficcommand.timestamp.seconds + trafficcommand.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=trafficcommand.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_tcu(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(
+        mcap_writer, TrafficCommandUpdate, "TrafficCommandUpdateTopic"
+    )
+
     trafficcommandupdate = TrafficCommandUpdate()
 
     trafficcommandupdate.version.version_major = 3
@@ -483,15 +667,24 @@ def create_sample_tcu(path):
         action.dismissed_action_id.value = 1000 + i
         action.failure_reason = "Cannot complete!"
 
-        """Serialize"""
-        bytes_buffer = trafficcommandupdate.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = (
+            trafficcommandupdate.timestamp.seconds
+            + trafficcommandupdate.timestamp.nanos / 1e9
+        )
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=trafficcommandupdate.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_tu(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, TrafficUpdate, "TrafficUpdateTopic")
+
     trafficupdate = TrafficUpdate()
 
     trafficupdate.version.version_major = 3
@@ -524,15 +717,21 @@ def create_sample_tu(path):
         moving_object.base.orientation.pitch = 0.0
         moving_object.base.orientation.yaw = 0.0
 
-        """Serialize"""
-        bytes_buffer = trafficupdate.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = trafficupdate.timestamp.seconds + trafficupdate.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=trafficupdate.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_mr(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, MotionRequest, "MotionRequestTopic")
+
     motionrequest = MotionRequest()
 
     motionrequest.version.version_major = 3
@@ -564,15 +763,21 @@ def create_sample_mr(path):
         desired_state.orientation.pitch = 0.0
         desired_state.orientation.yaw = 0.10
 
-        """Serialize"""
-        bytes_buffer = motionrequest.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = motionrequest.timestamp.seconds + motionrequest.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=motionrequest.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
 
 
 def create_sample_su(path):
-    f = open(path, "ab")
+    mcap_writer = prepare_mcap_writer(path)
+    channel_id = add_channel(mcap_writer, StreamingUpdate, "StreamingUpdateTopic")
+
     streamingupdate = StreamingUpdate()
 
     streamingupdate.version.version_major = 3
@@ -605,8 +810,116 @@ def create_sample_su(path):
         moving_object.base.orientation.pitch = 0.0
         moving_object.base.orientation.yaw = 0.0
 
-        """Serialize"""
-        bytes_buffer = streamingupdate.SerializeToString()
-        f.write(struct.pack("<L", len(bytes_buffer)) + bytes_buffer)
+        time = streamingupdate.timestamp.seconds + streamingupdate.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_id,
+            log_time=int(time * 1000000000),
+            data=streamingupdate.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
 
-    f.close()
+    mcap_writer.finish()
+
+
+def create_sample_svsd(path):
+    mcap_writer = prepare_mcap_writer(path)
+    channel_sv = add_channel(mcap_writer, SensorView, "SensorViewTopic")
+    channel_sd = add_channel(mcap_writer, SensorData, "SensorDataTopic")
+
+    sensorview = SensorView()
+
+    sensorview.version.version_major = 3
+    sensorview.version.version_minor = 0
+    sensorview.version.version_patch = 0
+
+    sensorview.timestamp.seconds = 0
+    sensorview.timestamp.nanos = 0
+
+    sensorview.sensor_id.value = 42
+
+    sensorview.host_vehicle_id.value = 114
+
+    sv_ground_truth = sensorview.global_ground_truth
+    sv_ground_truth.version.version_major = 3
+    sv_ground_truth.version.version_minor = 0
+    sv_ground_truth.version.version_patch = 0
+
+    sv_ground_truth.timestamp.seconds = 0
+    sv_ground_truth.timestamp.nanos = 0
+
+    sv_ground_truth.host_vehicle_id.value = 114
+
+    moving_object = sv_ground_truth.moving_object.add()
+    moving_object.id.value = 114
+
+    sensordata = SensorData()
+
+    sensordata.version.version_major = 3
+    sensordata.version.version_minor = 0
+    sensordata.version.version_patch = 0
+
+    sensordata.timestamp.seconds = 0
+    sensordata.timestamp.nanos = 0
+
+    sensordata.sensor_id.value = 42
+
+    sdmoving_object = sensordata.moving_object.add()
+    sdmoving_object.header.tracking_id.value = 1
+    gt_id = sdmoving_object.header.ground_truth_id.add()
+    gt_id.value = 114
+
+    # Generate 10 OSI messages for 9 seconds
+    for i in range(10):
+        # Increment the time
+        sensorview.timestamp.seconds += 1
+        sensorview.timestamp.nanos += 100000
+
+        sv_ground_truth.timestamp.seconds += 1
+        sv_ground_truth.timestamp.nanos += 100000
+
+        sensordata.timestamp.seconds += 1
+        sensordata.timestamp.nanos += 100000
+
+        # SensorView moving object
+        moving_object.vehicle_classification.type = 2
+
+        moving_object.base.dimension.length = 5
+        moving_object.base.dimension.width = 2
+        moving_object.base.dimension.height = 1
+
+        moving_object.base.position.x = 0.0 + i
+        moving_object.base.position.y = 0.0
+        moving_object.base.position.z = 0.0
+
+        moving_object.base.orientation.roll = 0.0
+        moving_object.base.orientation.pitch = 0.0
+        moving_object.base.orientation.yaw = 0.0
+
+        # SensorData moving object
+        sdmoving_object.base.dimension.length = 5
+        sdmoving_object.base.dimension.width = 2
+        sdmoving_object.base.dimension.height = 1
+
+        sdmoving_object.base.position.x = 0.0 + i
+        sdmoving_object.base.position.y = 0.0
+        sdmoving_object.base.position.z = 0.0
+
+        sdmoving_object.base.orientation.roll = 0.0
+        sdmoving_object.base.orientation.pitch = 0.0
+        sdmoving_object.base.orientation.yaw = 0.0
+
+        time = sensorview.timestamp.seconds + sensorview.timestamp.nanos / 1e9
+        mcap_writer.add_message(
+            channel_id=channel_sv,
+            log_time=int(time * 1000000000),
+            data=sensorview.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
+        mcap_writer.add_message(
+            channel_id=channel_sd,
+            log_time=int(time * 1000000000),
+            data=sensordata.SerializeToString(),
+            publish_time=int(time * 1000000000),
+        )
+
+    mcap_writer.finish()
