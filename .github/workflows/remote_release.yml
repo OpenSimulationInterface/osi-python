@@ -41,3 +41,4 @@ jobs:
           github_token: ${{ secrets.MACHINE_USER_PAT }}
           # Determines if --tags is used
           tags: true
+          force: true
