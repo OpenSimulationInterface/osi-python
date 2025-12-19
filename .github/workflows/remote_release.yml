@@ -39,6 +39,7 @@ jobs:
         with:
           # Token for the repo. Can be passed in using $\{{ secrets.GITHUB_TOKEN }}
           github_token: ${{ secrets.MACHINE_USER_PAT }}
+          branch: main
           # Determines if --tags is used
           tags: true
           force: true
