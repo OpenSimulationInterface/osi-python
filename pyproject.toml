@@ -7,7 +7,8 @@ authors = [
 maintainers = [
     {name = "ASAM Open Simulation Interface Project", email = "osi@asam.net"},
 ]
-license = {text = "MPL-2.0"}
+license = "MPL-2.0"
+license-files = ["LICENSE"]
 readme = "README.md"
 dynamic = ["version"]
 requires-python = ">=3.10"
@@ -56,7 +57,7 @@ testpaths = [
 
 [build-system]
 requires = [
-    "poetry-core>=2.0.0,<3.0.0",
+    "poetry-core>=2.2.0,<3.0.0",
     "poetry-dynamic-versioning>=1.0.0,<2.0.0",
     "protoc-wheel-0==30.2",
 ]
